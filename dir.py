@@ -1,22 +1,42 @@
-import os
-import shutil
+import git
+from cookiecutter.main import cookiecutter
+from git.exc import GitCommandError, InvalidGitRepositoryError
 
-def varrer_diretorios(diretorio_raiz, lista_nomes):
-    for root, dirs, files in os.walk(diretorio_raiz, topdown=False):
-        for nome_dir in lista_nomes:
-            if nome_dir in dirs:
-                caminho_dir = os.path.join(root, nome_dir)
-                print(f'Removendo diretório: {caminho_dir}')
-                try:
-                    shutil.rmtree(caminho_dir)
-                    print(f'Diretório removido com sucesso: {caminho_dir}')
-                except Exception as e:
-                    print(f'Erro ao remover diretório {caminho_dir}: {e}')
+def clone_repository(repo_url, repo_path):
+    try:
+        git.Repo.clone_from(repo_url, repo_path)
+        print(f'Repositório clonado em {repo_path}')
+    except GitCommandError as e:
+        print(f'Erro ao clonar o repositório: {e}')
 
-if __name__ == "__main__":
-    diretorio_raiz = input("Digite o caminho do diretório raiz do projeto: ")
-    
-    lista_nomes = ["nome_dir1", "nome_dir2", "nome_dir3"]  # Substitua com os nomes que você deseja remover
-    
-    varrer_diretorios(diretorio_raiz, lista_nomes)
+def generate_code(template_path, repo_path):
+    try:
+        cookiecutter(template_path, output_dir=repo_path)
+        print('Código gerado pelo Cookiecutter.')
+    except Exception as e:
+        print(f'Erro ao gerar código com o Cookiecutter: {e}')
+
+def commit_and_push(repo_path):
+    try:
+        repo = git.Repo(repo_path)
+        repo.git.add('--all')
+        repo.git.commit('-m', 'Adiciona código gerado pelo Cookiecutter')
+        repo.git.push()
+        print('Alterações adicionadas, commitadas e enviadas para o repositório.')
+    except GitCommandError as e:
+        print(f'Erro ao realizar commit e push: {e}')
+
+# Substitua com seus valores específicos
+repo_url = 'https://seu-usuario@bitbucket.org/seu-usuario/seu-repositorio.git'
+repo_path = 'caminho/local/do/repositorio'
+template_path = 'caminho/do/template'
+
+try:
+    clone_repository(repo_url, repo_path)
+    generate_code(template_path, repo_path)
+    commit_and_push(repo_path)
+except InvalidGitRepositoryError:
+    print('Diretório do repositório inválido.')
+except Exception as e:
+    print(f'Erro desconhecido: {e}')
 
